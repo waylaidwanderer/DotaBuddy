@@ -1,0 +1,210 @@
+$colorPrimary: #0a151e;
+$colorPrimaryAccent: #0d1d2a;
+$colorSecondary: #f6e444;
+$colorSecondaryLight: #ffff62;
+$colorSecondaryLight2: #ffff71;
+$colorText: #e0e0e0;
+$colorTextSecondary: #202020;
+$colorGrey: #616161;
+
+.primary {
+    background-color: $colorPrimary !important;
+}
+.primary-text {
+    color: $colorPrimary !important;
+}
+.primary.darken {
+    background-color: #000005 !important;
+}
+.secondary {
+    background-color: $colorSecondary !important;
+    color: $colorTextSecondary;
+}
+.secondary-text {
+    color: $colorSecondary !important;
+}
+.secondary-text-color {
+    color: $colorTextSecondary !important;
+}
+.secondary.lighten {
+    background-color: $colorSecondaryLight !important;
+}
+.secondary.lighten-2 {
+    background-color: $colorSecondaryLight2 !important;
+}
+.secondary-text.lighten {
+    color: $colorSecondaryLight !important;
+}
+.secondary-text.lighten-2 {
+    color: $colorSecondaryLight2 !important;
+}
+textarea {
+    border-bottom-color: $colorSecondary !important;
+    &:focus {
+        border-bottom-color: $colorSecondary !important;
+        box-shadow: $colorSecondary 0 1px 0 0 !important;
+    }
+}
+input {
+    &:focus {
+        border-bottom-color: $colorSecondary !important;
+        box-shadow: $colorSecondary 0 1px 0 0 !important;
+    }
+}
+label.active {
+    color: $colorSecondary !important;
+}
+.filled-in[type="checkbox"]:checked+label {
+    &::after {
+        background-color: $colorSecondary !important;
+        border: 2px solid $colorSecondary !important;
+    }
+}
+.tabs {
+    background-color: $colorPrimaryAccent;
+    .indicator {
+        background-color: $colorSecondary !important;
+    }
+}
+.picker__date-display {
+    background-color: $colorSecondary !important;
+}
+.picker__weekday-display {
+    background-color: #ddcb2b !important;
+}
+.picker__close {
+    color: $colorSecondary !important;
+}
+.picker__today {
+    color: $colorSecondary !important;
+}
+.picker__day.picker__day--today {
+    color: $colorSecondary !important;
+}
+.picker__day--selected {
+    background-color: $colorSecondary !important;
+    &:hover {
+        background-color: $colorSecondary !important;
+    }
+}
+.picker--focused {
+    .picker__day--selected {
+        background-color: $colorSecondary !important;
+    }
+}
+.select-dropdown {
+    li {
+        span {
+            color: $colorSecondary;
+        }
+    }
+}
+body {
+    background-color: #1c3e51;
+    color: $colorText;
+}
+.collapsible {
+    border: none;
+}
+.collapsible-header {
+    background-color: $colorPrimaryAccent;
+    border-bottom: $colorPrimary 1px solid;
+
+    img {
+        width: 2rem;
+        font-size: 1.6rem;
+        line-height: 3rem;
+        display: block;
+        float: left;
+        text-align: center;
+        margin-right: 1rem;
+        margin-top: 0.45rem;
+    }
+}
+.collapsible-body {
+    background-color: $colorPrimaryAccent;
+    border-bottom: $colorPrimary 1px solid;
+
+    .row {
+        margin: 0;
+    }
+}
+.card-panel {
+    background-color: $colorPrimaryAccent;
+}
+.card {
+    background-color: $colorPrimaryAccent;
+    .card-action {
+        border-color: $colorPrimary;
+    }
+}
+.radial-progress {
+    margin: 0 auto;
+    .inset {
+        background-color: $colorPrimaryAccent;
+    }
+}
+#nav-mobile {
+    background-color: $colorPrimary;
+    a {
+        color: $colorText;
+    }
+    li {
+        &:hover {
+            background-color: $colorGrey;
+        }
+        &:active {
+            background-color: $colorGrey;
+        }
+    }
+}
+.modal {
+    background-color: $colorPrimaryAccent !important;
+}
+.modal-footer {
+    background-color: $colorPrimaryAccent !important;
+    border-top: $colorPrimary 1px solid !important;
+    .btn-flat {
+        color: $colorText !important;
+    }
+}
+.tab {
+    a {
+        color: $colorText !important;
+    }
+}
+.dropdown-content {
+    background-color: $colorPrimaryAccent;
+    .divider {
+        background-color: $colorPrimary;
+    }
+    li {
+        &:hover {
+            background-color: $colorGrey;
+        }
+    }
+    li.active {
+        background-color: $colorGrey;
+    }
+}
+table.striped>tbody>tr {
+    &:nth-child(2n+1) {
+        background-color: $colorGrey;
+    }
+}
+.progress {
+    height: 50px;
+    position: relative;
+    text-align: center;
+    background-color: #1F3644;
+    span.progress-text {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 5px;
+        font-size: 28px;
+    }
+    .determinate {
+        overflow: hidden;
+    }
+}

@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ title }}</title>
+
+    <link rel="stylesheet" href="stylesheets/material-icons.css"/>
+    <link rel="stylesheet" href="stylesheets/materialize.css"  media="screen,projection"/>
+    <link rel="stylesheet" href="node_modules/perfect-scrollbar/dist/css/perfect-scrollbar.min.css"/>
+</head>
+<body>
+    <nav class="drag primary">
+        <div class="nav-wrapper">
+            <a href="#" class="brand-logo center">{{ title }}</a>
+            <ul class="right">
+                <li class="minimize"><a><i class="material-icons">remove</i></a></li>
+                <li class="maximize"><a><i class="material-icons">expand_less</i></a></li>
+                <li class="close"><a><i class="material-icons">close</i></a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="row" style="padding: 0; margin: 0;">
+        <ul class="tabs z-depth-1">
+            <li class="tab col s6"><a href="#stats">Player Stats</a></li>
+            <li class="tab col s6"><a href="#timers">Timers</a></li>
+        </ul>
+    </div>
+    <main>
+        <div class="container">
+            <div class="row">
+                <div id="stats" class="col s12">
+                    <div class="row">
+                        <div class="col s12">
+                            <form>
+                                <div class="file-field input-field col s12">
+                                    <div class="btn secondary" id="serverlog-locate">
+                                        <span>Locate server_log.txt</span>
+                                    </div>
+                                    <div class="file-path-wrapper">
+                                        <input id="serverlog-path" type="text">
+                                    </div>
+                                </div>
+                                <div class="input-field col s12">
+                                    <input id="steam-api-key" type="text" placeholder="Your Steam API Key"/>
+                                    <label for="steam-api-key">Steam API Key</label>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <p class="col s12">
+                            <strong class="secondary-text">Status:</strong> <span id="serverlog-status">idle...</span>
+                        </p>
+                        <div class="col s12">
+                            <ul id="radiant" class="collapsible players radiant" data-collapsible="expandable">
+                                <li class="header" data-state="open">
+                                    <div class="collapsible-header green darken-2">Radiant</div>
+                                </li>
+                                <li v-for="player in players">
+                                    <div class="collapsible-header primary" :class="[player.status == 15 ? '' : 'active']"><img class="circle" :src="player.user.avatarmedium"/>{{ player.user.personaname }} <a class="secondary-text" :href="player.user.profileurl" target="_blank">[Steam]</a> <a class="secondary-text" :href="'http://www.dotabuff.com/players/' + player.accountId" target="_blank">[Dotabuff]</a> <a class="secondary-text" :href="'http://yasp.co/players/' + player.accountId" target="_blank">[YASP]</a> <span class="material-icons">person</span> {{ player.solo_mmr }} <span class="material-icons">people</span> {{ player.party_mmr }} <span class="material-icons">help</span> {{ player.estimated_mmr }}</div>
+                                    <div class="collapsible-body">
+                                        <div v-for="hero in player.heroes" :class="[hero.match_id === undefined ? 'hidden' : '']">
+                                            <a class="white-text" :href="'http://www.dotabuff.com/matches/' + hero.match_id" target="_blank">
+                                                <img :src="hero.img"/>
+                                                <div class="center" :class="[hero.win ? 'won' : 'lost']">
+                                                    {{ hero.kda }}
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <span class="center" style="width: 100%;" v-if="player.status == 15">Match history is not public</span>
+                                    </div>
+                                </li>
+                            </ul>
+
+                            <ul id="dire" class="collapsible players dire" data-collapsible="expandable">
+                                <li class="header" data-state="open">
+                                    <div class="collapsible-header materialize-red darken-4">Dire</div>
+                                </li>
+                                <li v-for="player in players">
+                                    <div class="collapsible-header primary" :class="[player.status == 15 ? '' : 'active']"><img class="circle" :src="player.user.avatarmedium"/>{{ player.user.personaname }} <a class="secondary-text" :href="player.user.profileurl" target="_blank">[Steam]</a> <a class="secondary-text" :href="'http://www.dotabuff.com/players/' + player.accountId" target="_blank">[Dotabuff]</a> <a class="secondary-text" :href="'http://yasp.co/players/' + player.accountId" target="_blank">[YASP]</a> <span class="material-icons">person</span> {{ player.solo_mmr }} <span class="material-icons">people</span> {{ player.party_mmr }} <span class="material-icons">help</span> {{ player.estimated_mmr }}</div>
+                                    <div class="collapsible-body">
+                                        <div v-for="hero in player.heroes" :class="[hero.match_id === undefined ? 'hidden' : '']">
+                                            <a class="white-text" :href="'http://www.dotabuff.com/matches/' + hero.match_id" target="_blank">
+                                                <img :src="hero.img"/>
+                                                <div class="center" :class="[hero.win ? 'won' : 'lost']">
+                                                    {{ hero.kda }}
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <span class="center" style="width: 100%;" v-if="player.status == 15">Match history is not public</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div id="timers" class="col s12">
+                    <div class="row">
+                        <p class="col s12">
+                            <strong class="secondary-text">Game Sense Integration status: </strong> <span id="gsi-status">inactive</span>
+                        </p>
+                        <div class="col s12">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+    <script src="node_modules/vue/dist/vue.js"></script>
+    <script src="node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="js/materialize.min.js"></script>
+    <script src="node_modules/perfect-scrollbar/dist/js/perfect-scrollbar.jquery.min.js"></script>
+    <script src="helpers/context_menu.js"></script>
+    <script src="app.js"></script>
+    <script>if (window.module) module = window.module;</script>
+</body>
+</html>
