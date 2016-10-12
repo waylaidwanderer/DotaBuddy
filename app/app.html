@@ -33,7 +33,7 @@
                         <div class="col s12">
                             <form>
                                 <div class="file-field input-field col s12">
-                                    <div class="btn secondary" id="serverlog-locate">
+                                    <div class="btn secondary waves-effect" id="serverlog-locate">
                                         <span>Locate server_log.txt</span>
                                     </div>
                                     <div class="file-path-wrapper">
@@ -49,7 +49,8 @@
                     </div>
                     <div class="row">
                         <p class="col s12" style="margin-top: 0;">
-                            <strong class="secondary-text">Status:</strong> <span id="serverlog-status">idle...</span>
+                            <button id="reparse" class="btn secondary waves-effect"><i class="material-icons left">refresh</i> Re-Parse Last Match</button>
+                            <strong class="secondary-text" style="padding-left: 10px;">Status:</strong> <span id="serverlog-status">idle...</span>
                         </p>
                         <div class="col s12">
                             <ul id="radiant" class="collapsible players radiant" data-collapsible="expandable">

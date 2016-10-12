@@ -25,6 +25,7 @@ var dotaHelper = new DotaHelper();
 var gsiListener = new d2gsi({port: 3222});
 var steamApiKey = '';
 var steamUser;
+var serverLogPath;
 
 var heroesListCache;
 
@@ -90,6 +91,7 @@ settings.get('server_log_path').then(val => {
         try {
             fs.accessSync(val, fs.F_OK);
             $('#serverlog-path').val(val);
+            serverLogPath = val;
             ok = true;
         } catch (e) {
             console.log(e);
@@ -173,6 +175,7 @@ $('#serverlog-locate').click(function() {
         }
         settings.set('server_log_path', fileName);
         $('#serverlog-path').val(fileName);
+        serverLogPath = fileName;
         dotaHelper.watchServerLog(fileName, renderPlayers);
         updateServerLogStatus('Waiting for game to start...');
     });
@@ -192,6 +195,10 @@ $('.collapsible .header').click(function() {
         $(this).parent().find('.collapsible-header:not(.active)').trigger('click');
         $(this).data('state', 'open');
     }
+});
+
+$('#reparse').click(function() {
+    renderPlayers(dotaHelper.readServerLog(serverLogPath, true));
 });
 
 var dotaGsiClockTime;

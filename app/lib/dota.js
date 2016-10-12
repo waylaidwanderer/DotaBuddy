@@ -21,15 +21,25 @@ DotaHelper.prototype.watchServerLog = function(fileName, callback) {
     });
 };
 
-DotaHelper.prototype.readServerLog = function(fileName) {
+DotaHelper.prototype.readServerLog = function(fileName, findLast) {
+    findLast = findLast || false;
     var lines = [];
     fs.readFileSync(fileName).toString().split("\n").forEach(function(line) {
         if (line === '') return;
         lines.push(line);
     });
     if (lines.length == 0) return [];
-    var lastLine = lines[lines.length - 1];
-    return this.parseServerLogLine(lastLine);
+    if (findLast) {
+        for (var i = lines.length - 1; i >= 0; i--) {
+            var line = lines[i];
+            var steamIds = this.parseServerLogLine(line);
+            if (steamIds.length > 0) return steamIds;
+        }
+        return [];
+    } else {
+        var lastLine = lines[lines.length - 1];
+        return this.parseServerLogLine(lastLine);
+    }
 };
 
 DotaHelper.prototype.parseServerLogLine = function(line) {
