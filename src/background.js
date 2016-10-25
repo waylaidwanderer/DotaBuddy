@@ -3,7 +3,7 @@
 // It doesn't have any windows which you can see on screen, but we can open
 // window from here.
 
-import { app, Menu } from 'electron';
+import { app, Menu, globalShortcut } from 'electron';
 import { devMenuTemplate } from './menu/dev_menu_template';
 import { editMenuTemplate } from './menu/edit_menu_template';
 import createWindow from './helpers/window';
@@ -47,5 +47,6 @@ app.on('ready', function () {
 });
 
 app.on('window-all-closed', function () {
+    globalShortcut.unregisterAll();
     app.quit();
 });

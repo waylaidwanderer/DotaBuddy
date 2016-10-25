@@ -1,7 +1,9 @@
 {
   "build": {
-    "appId": "com.example.electron-boilerplate",
-    "app-category-type": "your.app.category.type",
+    "appId": "net.jzhang.dotabuddy",
+    "app-category-type": "gaming",
+    "asar": false,
+    "compression": "store",
     "win": {
       "target": [
         "nsis"
@@ -43,6 +45,7 @@
     "gulp": "^3.9.0",
     "gulp-batch": "^1.0.5",
     "gulp-less": "^3.0.3",
+    "gulp-sass": "^2.3.2",
     "gulp-plumber": "^1.1.0",
     "gulp-util": "^3.0.6",
     "gulp-watch": "^4.3.5",
@@ -51,8 +54,5 @@
     "source-map-support": "^0.4.2",
     "spectron": "^3.3.0",
     "yargs": "^4.2.0"
-  },
-  "dependencies": {
-    "gulp-sass": "^2.3.2"
   }
 }

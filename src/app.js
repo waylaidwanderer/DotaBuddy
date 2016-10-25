@@ -8,10 +8,10 @@ import jQuery from 'jquery';
 import SteamID from 'steamid';
 import SteamApi from 'steam-api';
 import async from 'async';
-import d2gsi from 'dota2-gsi';
+import D2gsi from 'dota2-gsi';
 import monitor from 'active-window';
-import robot from 'robotjs';
-var CountDownTimer = require('./lib/countdown.js');
+import robot from 'kbm-robot';
+
 var DotaHelper = require('./lib/dota.js');
 
 var app = remote.app;
@@ -22,12 +22,17 @@ var appDir = jetpack.cwd(app.getAppPath());
 var manifest = appDir.read('package.json', 'json');
 
 var dotaHelper = new DotaHelper();
-var gsiListener = new d2gsi({port: 3222});
+var gsiListener = new D2gsi({port: 3222});
 var steamApiKey = '';
 var steamUser;
 var serverLogPath;
-
 var heroesListCache;
+
+var dotaGsiClockTime;
+var dotaRoshanInterval;
+var dotaRoshanRespawnTimestamp;
+var dotaAegisInterval;
+var dotaAegisExpireTimestamp;
 
 // load global stuff for Vue
 var globalData = {
@@ -71,10 +76,31 @@ var direVue = new Vue({
 monitor.getActiveWindow(function(window) {
     try {
         if (window.app == 'dota2') {
-            if (globalShortcut.isRegistered('Insert')) return;
-            const ret = globalShortcut.register('Insert', startRoshanTimer);
-            if (!ret) {
-                console.log('registration failed');
+            if (!globalShortcut.isRegistered('Insert')) {
+                const ret = globalShortcut.register('Insert', function() {
+                    startRoshanTimer(true);
+                });
+                if (!ret) {
+                    console.log('"Insert" registration failed');
+                }
+            }
+            if (!globalShortcut.isRegistered('Alt+Insert')) {
+                const ret = globalShortcut.register('Alt+Insert', startRoshanTimer);
+                if (!ret) {
+                    console.log('"Alt+Insert" registration failed');
+                }
+            }
+            if (!globalShortcut.isRegistered('Home')) {
+                const ret = globalShortcut.register('Home', startAegisTimer);
+                if (!ret) {
+                    console.log('"Home" registration failed');
+                }
+            }
+            if (!globalShortcut.isRegistered('CmdOrCtrl+Alt+Insert')) {
+                const ret = globalShortcut.register('CmdOrCtrl+Alt+Insert', clearTimers);
+                if (!ret) {
+                    console.log('"CmdOrCtrl+Alt+Insert" registration failed');
+                }
             }
         } else {
             globalShortcut.unregisterAll();
@@ -110,6 +136,7 @@ settings.get('steam_api_key').then(val => {
         steamApiKey = val;
         steamUser = new SteamApi.User(val);
         $('#steam-api-key').val(val);
+        getHeroesList();
     }
 });
 
@@ -138,6 +165,8 @@ $(window).resize(function() {
     }
 });
 
+robot.startJar();
+
 $(document).ready(function() {
     $('main').perfectScrollbar();
 });
@@ -157,6 +186,7 @@ $('#steam-api-key').change(function() {
         }
         settings.set('steam_api_key', key);
         Materialize.toast('Steam API key saved!', 5000, 'rounded');
+        getHeroesList();
     });
 });
 
@@ -201,7 +231,6 @@ $('#reparse').click(function() {
     renderPlayers(dotaHelper.readServerLog(serverLogPath, true));
 });
 
-var dotaGsiClockTime;
 gsiListener.events.on('newclient', function(client) {
     updateGsiStatus('listening for events...');
     client.on('newdata', function(data) {
@@ -212,6 +241,14 @@ gsiListener.events.on('newclient', function(client) {
             dotaGsiClockTime = undefined;
         }
     });
+});
+
+document.addEventListener("keydown", function (e) {
+    if (e.which === 123) {
+        remote.getCurrentWindow().toggleDevTools();
+    } else if (e.which === 116) {
+        location.reload();
+    }
 });
 
 function cacheHeroesList(callback) {
@@ -228,10 +265,17 @@ function cacheHeroesList(callback) {
 
 function getHeroesList() {
     if (heroesListCache === undefined) {
-        heroesListCache = JSON.parse(fs.readFileSync('./heroes.json').toString());
-        if (Math.round(Date.now()/1000) - heroesListCache.timestamp > 24 * 60 * 60) cacheHeroesList();
+        try {
+            fs.accessSync('./heroes.json', fs.F_OK);
+            heroesListCache = JSON.parse(fs.readFileSync('./heroes.json').toString());
+            if (Math.round(Date.now()/1000) - heroesListCache.timestamp > 24 * 60 * 60) cacheHeroesList();
+        } catch (e) {
+            cacheHeroesList();
+        }
+    } else {
+        return heroesListCache.response.result;
     }
-    return heroesListCache.response.result;
+    return null;
 }
 
 function getHeroById(id) {
@@ -415,25 +459,100 @@ function updateGsiStatus(message) {
     $('#gsi-status').html(message);
 }
 
-function startRoshanTimer() {
+function startRoshanTimer(shouldStartAegisTimer) {
+    shouldStartAegisTimer = shouldStartAegisTimer || false;
     if (dotaGsiClockTime === undefined) {
         console.log('Game not in progress');
         return;
     }
+    $('ul.tabs').tabs('select_tab', 'timers');
     var roshanMinSpawnTime = dotaGsiClockTime + 480;
     var roshanMinSpawnTimeHuman = toHHMMSS(roshanMinSpawnTime);
     var roshanMaxSpawnTime = dotaGsiClockTime + 660;
     var roshanMaxSpawnTimeHuman = toHHMMSS(roshanMaxSpawnTime);
-    var output = 'Roshan respawn: ' + roshanMinSpawnTimeHuman + ' - ' + roshanMaxSpawnTimeHuman;
+    var output = '▶ ';
+    if (dotaRoshanInterval) {
+        output += '(Reminder) ';
+        roshanMinSpawnTimeHuman = toHHMMSS(dotaGsiClockTime + dotaRoshanRespawnTimestamp - Math.floor(Date.now() / 1000));
+        roshanMaxSpawnTimeHuman = toHHMMSS(dotaGsiClockTime + dotaRoshanRespawnTimestamp - Math.floor(Date.now() / 1000) + 180);
+        if (!dotaAegisInterval) {
+            shouldStartAegisTimer = false;
+        }
+    } else {
+        dotaRoshanRespawnTimestamp = Math.floor(Date.now() / 1000) + 480;
+        dotaRoshanInterval = setInterval(onRoshanTimerTick, 750);
+    }
+    output += 'Roshan respawn: ' + roshanMinSpawnTimeHuman + ' - ' + roshanMaxSpawnTimeHuman;
     clipboard.writeText(output);
-    console.log(output);
-    robot.keyTap('enter');
-    setTimeout(function() {
-        robot.keyTap('v', 'control');
-        setTimeout(function() {
-            robot.keyTap('enter');
-        }, 10);
-    }, 10);
+    robot.type("enter", 10).press("ctrl").type("v", 10).release("ctrl").sleep(10).type("enter").go();
+    if (shouldStartAegisTimer) {
+        (function(dotaGsiClockTime) {
+            setTimeout(function() {
+                startAegisTimer(dotaGsiClockTime + 300)
+            }, 1000);
+        })(dotaGsiClockTime);
+    }
+}
+
+function startAegisTimer(time) {
+    if (dotaGsiClockTime === undefined) {
+        console.log('Game not in progress');
+        return;
+    }
+    $('ul.tabs').tabs('select_tab', 'timers');
+    time = time || dotaGsiClockTime + 300;
+    var output = '▶ ';
+    var aegisSpawnTime = toHHMMSS(time);
+    if (dotaAegisInterval) {
+        output += '(Reminder) ';
+        aegisSpawnTime = toHHMMSS(dotaGsiClockTime + dotaAegisExpireTimestamp - Math.floor(Date.now() / 1000));
+    } else {
+        dotaAegisExpireTimestamp = Math.floor(Date.now() / 1000) + 300;
+        dotaAegisInterval = setInterval(onAegisTimerTick, 750);
+    }
+    output += 'Aegis expires: ' + aegisSpawnTime;
+    clipboard.writeText(output);
+    robot.type("enter", 10).press("ctrl").type("v", 10).release("ctrl").sleep(10).type("enter").go();
+}
+
+function onRoshanTimerTick() {
+    if (dotaRoshanRespawnTimestamp - Math.floor(Date.now() / 1000) == 0) {
+        clearInterval(dotaRoshanInterval);
+        dotaRoshanInterval = null;
+        var output = '▶ Roshan minimum spawn time reached!';
+        clipboard.writeText(output);
+        robot.type("enter", 10).press("ctrl").type("v", 10).release("ctrl").sleep(10).type("enter").go();
+    }
+}
+
+function onAegisTimerTick() {
+    var secondsLeft = dotaAegisExpireTimestamp  - Math.floor(Date.now() / 1000);
+    if (secondsLeft == 180) {
+        var output = '▶ Aegis expires in 3 minutes.';
+        clipboard.writeText(output);
+        robot.type("enter", 10).press("ctrl").type("v", 10).release("ctrl").sleep(10).type("enter").go();
+    } else if (secondsLeft == 60) {
+        output = '▶ Aegis expires in 1 minute!';
+        clipboard.writeText(output);
+        robot.type("enter", 10).press("ctrl").type("v", 10).release("ctrl").sleep(10).type("enter").go();
+    } else if (secondsLeft == 0) {
+        clearInterval(dotaAegisInterval);
+        dotaAegisInterval = null;
+        output = '▶ Aegis expired!';
+        clipboard.writeText(output);
+        robot.type("enter", 10).press("ctrl").type("v", 10).release("ctrl").sleep(10).type("enter").go();
+    }
+}
+
+function clearTimers() {
+    if (dotaRoshanInterval) {
+        clearInterval(dotaRoshanInterval);
+        dotaRoshanInterval = null;
+    }
+    if (dotaAegisInterval) {
+        clearInterval(dotaAegisInterval);
+        dotaAegisInterval = null;
+    }
 }
 
 function toHHMMSS(number) {
@@ -445,7 +564,8 @@ function toHHMMSS(number) {
     if (hours   < 10) {hours   = "0"+hours;}
     if (minutes < 10) {minutes = "0"+minutes;}
     if (seconds < 10) {seconds = "0"+seconds;}
-    return hours+':'+minutes+':'+seconds;
+    hours = hours > 0 ? hours+':' : '';
+    return hours+minutes+':'+seconds;
 }
 
 function initialPlayerState() {
