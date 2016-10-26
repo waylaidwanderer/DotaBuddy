@@ -30,9 +30,9 @@ var heroesListCache;
 
 var dotaGsiClockTime;
 var dotaRoshanInterval;
-var dotaRoshanRespawnTimestamp;
+var dotaRoshanRespawnTime;
 var dotaAegisInterval;
-var dotaAegisExpireTimestamp;
+var dotaAegisExpireTime;
 
 // load global stuff for Vue
 var globalData = {
@@ -258,7 +258,7 @@ function cacheHeroesList(callback) {
             timestamp: Math.round(Date.now()/1000),
             response: res
         };
-        fs.writeFileSync('./heroes.json', JSON.stringify(heroesListCache));
+        fs.writeFileSync(__dirname + '/heroes.json', JSON.stringify(heroesListCache));
         if (typeof callback === 'function') callback(res);
     });
 }
@@ -266,8 +266,8 @@ function cacheHeroesList(callback) {
 function getHeroesList() {
     if (heroesListCache === undefined) {
         try {
-            fs.accessSync('./heroes.json', fs.F_OK);
-            heroesListCache = JSON.parse(fs.readFileSync('./heroes.json').toString());
+            fs.accessSync(__dirname + '/heroes.json', fs.F_OK);
+            heroesListCache = JSON.parse(fs.readFileSync(__dirname + '/heroes.json').toString());
             if (Math.round(Date.now()/1000) - heroesListCache.timestamp > 24 * 60 * 60) cacheHeroesList();
         } catch (e) {
             cacheHeroesList();
@@ -473,13 +473,13 @@ function startRoshanTimer(shouldStartAegisTimer) {
     var output = '▶ ';
     if (dotaRoshanInterval) {
         output += '(Reminder) ';
-        roshanMinSpawnTimeHuman = toHHMMSS(dotaGsiClockTime + dotaRoshanRespawnTimestamp - Math.floor(Date.now() / 1000));
-        roshanMaxSpawnTimeHuman = toHHMMSS(dotaGsiClockTime + dotaRoshanRespawnTimestamp - Math.floor(Date.now() / 1000) + 180);
+        roshanMinSpawnTimeHuman = toHHMMSS(dotaRoshanRespawnTime);
+        roshanMaxSpawnTimeHuman = toHHMMSS(dotaRoshanRespawnTime + 180);
         if (!dotaAegisInterval) {
             shouldStartAegisTimer = false;
         }
     } else {
-        dotaRoshanRespawnTimestamp = Math.floor(Date.now() / 1000) + 480;
+        dotaRoshanRespawnTime = roshanMinSpawnTime;
         dotaRoshanInterval = setInterval(onRoshanTimerTick, 750);
     }
     output += 'Roshan respawn: ' + roshanMinSpawnTimeHuman + ' - ' + roshanMaxSpawnTimeHuman;
@@ -505,9 +505,9 @@ function startAegisTimer(time) {
     var aegisSpawnTime = toHHMMSS(time);
     if (dotaAegisInterval) {
         output += '(Reminder) ';
-        aegisSpawnTime = toHHMMSS(dotaGsiClockTime + dotaAegisExpireTimestamp - Math.floor(Date.now() / 1000));
+        aegisSpawnTime = toHHMMSS(dotaAegisExpireTime);
     } else {
-        dotaAegisExpireTimestamp = Math.floor(Date.now() / 1000) + 300;
+        dotaAegisExpireTime = time;
         dotaAegisInterval = setInterval(onAegisTimerTick, 750);
     }
     output += 'Aegis expires: ' + aegisSpawnTime;
@@ -516,7 +516,7 @@ function startAegisTimer(time) {
 }
 
 function onRoshanTimerTick() {
-    if (dotaRoshanRespawnTimestamp - Math.floor(Date.now() / 1000) == 0) {
+    if (dotaRoshanRespawnTime - dotaGsiClockTime == 0) {
         clearInterval(dotaRoshanInterval);
         dotaRoshanInterval = null;
         var output = '▶ Roshan minimum spawn time reached!';
@@ -526,7 +526,7 @@ function onRoshanTimerTick() {
 }
 
 function onAegisTimerTick() {
-    var secondsLeft = dotaAegisExpireTimestamp  - Math.floor(Date.now() / 1000);
+    var secondsLeft = dotaAegisExpireTime  - dotaGsiClockTime;
     if (secondsLeft == 180) {
         var output = '▶ Aegis expires in 3 minutes.';
         clipboard.writeText(output);
