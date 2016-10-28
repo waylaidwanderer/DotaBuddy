@@ -2,14 +2,16 @@ DotaBuddy
 =========
 DotaBuddy is a cross-platform, open-source application with helpful features for when you're playing a match of Dota 2.
 
+Releases can be found [here](https://github.com/waylaidwanderer/DotaBuddy/releases).
+
 ![Main Tab](https://cloud.githubusercontent.com/assets/2882110/19323780/2dc36a18-9073-11e6-83bc-0311bebd8e01.png)
 
 # Quick start
 The only development dependency of this project is [Node.js](https://nodejs.org). So just make sure you have it installed.
 Then type few commands known to every Node developer...
 ```
-git clone https://github.com/szwacz/electron-boilerplate.git
-cd electron-boilerplate
+git clone https://github.com/waylaidwanderer/DotaBuddy.git
+cd DotaBuddy
 npm install
 npm start
 ```
