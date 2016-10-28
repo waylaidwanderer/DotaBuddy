@@ -74,32 +74,43 @@ var direVue = new Vue({
 });
 
 monitor.getActiveWindow(function(window) {
+    const RoshanAndAegisShortcut = 'Insert';
+    const RoshanShortcut = 'Alt+Insert';
+    const AegisShortcut = 'Home';
+    const ClearRoshanAndAegisShortcut = 'CmdOrCtrl+Alt+Insert';
+    const ClearAegisShortcut = 'CmdOrCtrl+Alt+Home';
     try {
         if (window.app == 'dota2') {
-            if (!globalShortcut.isRegistered('Insert')) {
-                const ret = globalShortcut.register('Insert', function() {
+            if (!globalShortcut.isRegistered(RoshanAndAegisShortcut)) {
+                const ret = globalShortcut.register(RoshanAndAegisShortcut, function() {
                     startRoshanTimer(true);
                 });
                 if (!ret) {
-                    console.log('"Insert" registration failed');
+                    console.log('"' + RoshanAndAegisShortcut + '" registration failed');
                 }
             }
-            if (!globalShortcut.isRegistered('Alt+Insert')) {
-                const ret = globalShortcut.register('Alt+Insert', startRoshanTimer);
+            if (!globalShortcut.isRegistered(RoshanShortcut)) {
+                const ret = globalShortcut.register(RoshanShortcut, startRoshanTimer);
                 if (!ret) {
-                    console.log('"Alt+Insert" registration failed');
+                    console.log('"' + RoshanShortcut + '" registration failed');
                 }
             }
-            if (!globalShortcut.isRegistered('Home')) {
-                const ret = globalShortcut.register('Home', startAegisTimer);
+            if (!globalShortcut.isRegistered(AegisShortcut)) {
+                const ret = globalShortcut.register(AegisShortcut, startAegisTimer);
                 if (!ret) {
-                    console.log('"Home" registration failed');
+                    console.log('"' + AegisShortcut + '" registration failed');
                 }
             }
-            if (!globalShortcut.isRegistered('CmdOrCtrl+Alt+Insert')) {
-                const ret = globalShortcut.register('CmdOrCtrl+Alt+Insert', clearTimers);
+            if (!globalShortcut.isRegistered(ClearRoshanAndAegisShortcut)) {
+                const ret = globalShortcut.register(ClearRoshanAndAegisShortcut, clearTimers);
                 if (!ret) {
-                    console.log('"CmdOrCtrl+Alt+Insert" registration failed');
+                    console.log('"' + ClearRoshanAndAegisShortcut + '" registration failed');
+                }
+            }
+            if (!globalShortcut.isRegistered(ClearAegisShortcut)) {
+                const ret = globalShortcut.register(ClearAegisShortcut, clearAegisTimer);
+                if (!ret) {
+                    console.log('"' + ClearAegisShortcut + '" registration failed');
                 }
             }
         } else {
@@ -484,7 +495,7 @@ function startRoshanTimer(shouldStartAegisTimer) {
     }
     output += 'Roshan respawn: ' + roshanMinSpawnTimeHuman + ' - ' + roshanMaxSpawnTimeHuman;
     clipboard.writeText(output);
-    robot.type("enter", 10).press("ctrl").type("v", 10).release("ctrl").sleep(10).type("enter").go();
+    pasteToChatBox();
     if (shouldStartAegisTimer) {
         (function(dotaGsiClockTime) {
             setTimeout(function() {
@@ -512,7 +523,7 @@ function startAegisTimer(time) {
     }
     output += 'Aegis expires: ' + aegisSpawnTime;
     clipboard.writeText(output);
-    robot.type("enter", 10).press("ctrl").type("v", 10).release("ctrl").sleep(10).type("enter").go();
+    pasteToChatBox();
 }
 
 function onRoshanTimerTick() {
@@ -521,7 +532,7 @@ function onRoshanTimerTick() {
         dotaRoshanInterval = null;
         var output = '▶ Roshan minimum spawn time reached!';
         clipboard.writeText(output);
-        robot.type("enter", 10).press("ctrl").type("v", 10).release("ctrl").sleep(10).type("enter").go();
+        pasteToChatBox();
     }
 }
 
@@ -530,29 +541,41 @@ function onAegisTimerTick() {
     if (secondsLeft == 180) {
         var output = '▶ Aegis expires in 3 minutes.';
         clipboard.writeText(output);
-        robot.type("enter", 10).press("ctrl").type("v", 10).release("ctrl").sleep(10).type("enter").go();
+        pasteToChatBox();
     } else if (secondsLeft == 60) {
         output = '▶ Aegis expires in 1 minute!';
         clipboard.writeText(output);
-        robot.type("enter", 10).press("ctrl").type("v", 10).release("ctrl").sleep(10).type("enter").go();
+        pasteToChatBox();
     } else if (secondsLeft == 0) {
         clearInterval(dotaAegisInterval);
         dotaAegisInterval = null;
         output = '▶ Aegis expired!';
         clipboard.writeText(output);
-        robot.type("enter", 10).press("ctrl").type("v", 10).release("ctrl").sleep(10).type("enter").go();
+        pasteToChatBox();
     }
 }
 
 function clearTimers() {
+    clearRoshanTimer();
+    clearAegisTimer();
+}
+
+function clearRoshanTimer() {
     if (dotaRoshanInterval) {
         clearInterval(dotaRoshanInterval);
         dotaRoshanInterval = null;
     }
+}
+
+function clearAegisTimer() {
     if (dotaAegisInterval) {
         clearInterval(dotaAegisInterval);
         dotaAegisInterval = null;
     }
+}
+
+function pasteToChatBox() {
+    robot.type("enter", 50).press("ctrl").type("v", 10).release("ctrl").sleep(50).type("enter").go();
 }
 
 function toHHMMSS(number) {
