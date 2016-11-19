@@ -12,30 +12,30 @@ import D2gsi from 'dota2-gsi';
 import monitor from 'active-window';
 import robot from 'kbm-robot';
 
-var DotaHelper = require('./lib/dota.js');
+const DotaHelper = require('./lib/dota.js');
 
-var app = remote.app;
-var globalShortcut = remote.globalShortcut;
-var clipboard = remote.clipboard;
-var dialog = remote.dialog;
-var appDir = jetpack.cwd(app.getAppPath());
-var manifest = appDir.read('package.json', 'json');
+const app = remote.app;
+const globalShortcut = remote.globalShortcut;
+const clipboard = remote.clipboard;
+const dialog = remote.dialog;
+const appDir = jetpack.cwd(app.getAppPath());
+const manifest = appDir.read('package.json', 'json');
 
-var dotaHelper = new DotaHelper();
-var gsiListener = new D2gsi({port: 3222});
-var steamApiKey = '';
-var steamUser;
-var serverLogPath;
-var heroesListCache;
+const dotaHelper = new DotaHelper();
+const gsiListener = new D2gsi({port: 3222});
+let steamApiKey = '';
+let steamUser;
+let serverLogPath;
+let heroesListCache;
 
-var dotaGsiClockTime;
-var dotaRoshanInterval;
-var dotaRoshanRespawnTime;
-var dotaAegisInterval;
-var dotaAegisExpireTime;
+let dotaGsiClockTime;
+let dotaRoshanInterval;
+let dotaRoshanRespawnTime;
+let dotaAegisInterval;
+let dotaAegisExpireTime;
 
 // load global stuff for Vue
-var globalData = {
+const globalData = {
     title: manifest.productName + " v" + manifest.version
 };
 new Vue({
@@ -46,10 +46,10 @@ new Vue({
     el: 'head',
     data: globalData
 });
-var radiantPlayers = {
+const radiantPlayers = {
     players: []
 };
-var radiantVue = new Vue({
+const radiantVue = new Vue({
     el: '#radiant',
     data: radiantPlayers,
     watch: {
@@ -59,10 +59,10 @@ var radiantVue = new Vue({
         }
     }
 });
-var direPlayers = {
+const direPlayers = {
     players: []
 };
-var direVue = new Vue({
+const direVue = new Vue({
     el: '#dire',
     data: direPlayers,
     watch: {
@@ -124,7 +124,7 @@ monitor.getActiveWindow(function(window) {
 // load settings
 settings.get('server_log_path').then(val => {
     if (val !== undefined) {
-        var ok = false;
+        let ok = false;
         try {
             fs.accessSync(val, fs.F_OK);
             $('#serverlog-path').val(val);
@@ -156,7 +156,7 @@ $('.minimize').click(function() {
     remote.getCurrentWindow().minimize();
 });
 $('.maximize').click(function() {
-    var window = remote.getCurrentWindow();
+    let window = remote.getCurrentWindow();
     if (window.isMaximized()) {
         window.unmaximize();
         $(this).find('i').text('expand_less');
@@ -189,7 +189,7 @@ $(document).on('click', 'a[target="_blank"]', function(e) {
 
 // steam api key input
 $('#steam-api-key').change(function() {
-    var key = $(this).val();
+    let key = $(this).val();
     settings.get('steam_api_key').then(val => {
         if (val === undefined) {
             steamApiKey = key;
@@ -209,7 +209,7 @@ $('#serverlog-locate').click(function() {
         ]
     }, function onSetServerLogPath(fileNames) {
         if (fileNames === undefined) return;
-        var fileName = fileNames[0];
+        let fileName = fileNames[0];
         if (path.basename(fileName) != 'server_log.txt') {
             // todo: dialog
             return;
@@ -290,8 +290,8 @@ function getHeroesList() {
 }
 
 function getHeroById(id) {
-    var heroesList = getHeroesList();
-    var res;
+    let heroesList = getHeroesList();
+    let res;
     $.each(heroesList.heroes, function(index, hero) {
         if (hero.id == id) {
             res = hero;
@@ -306,12 +306,11 @@ function renderPlayers(steamIds) {
     updateServerLogStatus('Lobby found, retrieving player details...');
     radiantPlayers.players = [];
     direPlayers.players = [];
-    var i;
-    for (i = 0; i < 5; i++) {
+    for (let i = 0; i < 5; i++) {
         radiantPlayers.players.push(initialPlayerState());
         direPlayers.players.push(initialPlayerState());
     }
-    var steamId64s = [];
+    let steamId64s = [];
     steamIds.forEach(function(steamId) {
         steamId64s.push(steamId.getSteamID64());
     });
@@ -323,10 +322,10 @@ function renderPlayers(steamIds) {
             }, 2000);
             return;
         }
-        var players = res.response.players;
-        var playerIndex = 0;
-        var radiantIndex = 0;
-        var direIndex = 0;
+        let players = res.response.players;
+        let playerIndex = 0;
+        let radiantIndex = 0;
+        let direIndex = 0;
         steamIds.forEach(function(steamId) {
             $.each(players, function(index, player) {
                 if (player.steamid == steamId.getSteamID64()) {
@@ -354,12 +353,12 @@ function renderPlayers(steamIds) {
 function renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player, radiant, callback) {
     jQuery.get('http://api.steampowered.com/IDOTA2Match_570/GetMatchHistory/v1?key='+steamApiKey+'&game_mode=1,2,3&account_id='+steamId.accountid+'&matches_requested=20')
     .done(function(res) {
-        var result = res.result;
-        var heroes = [];
-        for (var i = 0; i < 20; i++) {
+        let result = res.result;
+        let heroes = [];
+        for (let i = 0; i < 20; i++) {
             heroes.push(initialHeroState());
         }
-        var playerObject = {
+        let playerObject = {
             user: player,
             accountId: steamId.accountid,
             status: result.status,
@@ -387,17 +386,17 @@ function renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player,
             $.each(match.players, function(matchPlayerIndex, matchPlayer) {
                 if (matchPlayer.account_id != steamId.accountid) return true;
                 getMatchDetails(match.match_id, function setPlayerHeroes(details) {
-                    var kda = 'N/A';
-                    var win = true;
+                    let kda = 'N/A';
+                    let win = true;
                     $.each(details.players, function(dpI, detailPlayer) {
                         if (detailPlayer.account_id != steamId.accountid) return true;
                         kda = detailPlayer.kills + '/' + detailPlayer.deaths + '/' + detailPlayer.assists;
-                        var radiant = detailPlayer.player_slot <= 4;
+                        let radiant = detailPlayer.player_slot <= 4;
                         win = details.radiant_win == radiant;
                         return false;
                     });
-                    var hero = getHeroById(matchPlayer.hero_id);
-                    var heroName = hero.name.replace('npc_dota_hero_', '');
+                    let hero = getHeroById(matchPlayer.hero_id);
+                    let heroName = hero.name.replace('npc_dota_hero_', '');
                     try {
                         playerObject.heroes.$set(matchIndex, {
                             img: 'http://cdn.dota2.com/apps/dota2/images/heroes/' + heroName + '_lg.png',
@@ -445,7 +444,7 @@ function updateMmr(playerObject, steamId, fail) {
     });
 }
 
-var matchDetails = {};
+let matchDetails = {};
 function getMatchDetails(matchId, callback) {
     if (matchDetails.hasOwnProperty(matchId)) {
         callback(matchDetails[matchId]);
@@ -477,11 +476,11 @@ function startRoshanTimer(shouldStartAegisTimer) {
         return;
     }
     $('ul.tabs').tabs('select_tab', 'timers');
-    var roshanMinSpawnTime = dotaGsiClockTime + 480;
-    var roshanMinSpawnTimeHuman = toHHMMSS(roshanMinSpawnTime);
-    var roshanMaxSpawnTime = dotaGsiClockTime + 660;
-    var roshanMaxSpawnTimeHuman = toHHMMSS(roshanMaxSpawnTime);
-    var output = '▶ ';
+    let roshanMinSpawnTime = dotaGsiClockTime + 480;
+    let roshanMinSpawnTimeHuman = toHHMMSS(roshanMinSpawnTime);
+    let roshanMaxSpawnTime = dotaGsiClockTime + 660;
+    let roshanMaxSpawnTimeHuman = toHHMMSS(roshanMaxSpawnTime);
+    let output = '▶ ';
     if (dotaRoshanInterval) {
         output += '(Reminder) ';
         roshanMinSpawnTimeHuman = toHHMMSS(dotaRoshanRespawnTime);
@@ -512,8 +511,8 @@ function startAegisTimer(time) {
     }
     $('ul.tabs').tabs('select_tab', 'timers');
     time = time || dotaGsiClockTime + 300;
-    var output = '▶ ';
-    var aegisSpawnTime = toHHMMSS(time);
+    let output = '▶ ';
+    let aegisSpawnTime = toHHMMSS(time);
     if (dotaAegisInterval) {
         output += '(Reminder) ';
         aegisSpawnTime = toHHMMSS(dotaAegisExpireTime);
@@ -530,26 +529,26 @@ function onRoshanTimerTick() {
     if (dotaRoshanRespawnTime - dotaGsiClockTime == 0) {
         clearInterval(dotaRoshanInterval);
         dotaRoshanInterval = null;
-        var output = '▶ Roshan minimum spawn time reached!';
+        let output = '▶ Roshan minimum spawn time reached!';
         clipboard.writeText(output);
         pasteToChatBox();
     }
 }
 
 function onAegisTimerTick() {
-    var secondsLeft = dotaAegisExpireTime  - dotaGsiClockTime;
+    let secondsLeft = dotaAegisExpireTime  - dotaGsiClockTime;
     if (secondsLeft == 180) {
-        var output = '▶ Aegis expires in 3 minutes.';
+        let output = '▶ Aegis expires in 3 minutes.';
         clipboard.writeText(output);
         pasteToChatBox();
     } else if (secondsLeft == 60) {
-        output = '▶ Aegis expires in 1 minute!';
+        let output = '▶ Aegis expires in 1 minute!';
         clipboard.writeText(output);
         pasteToChatBox();
     } else if (secondsLeft == 0) {
         clearInterval(dotaAegisInterval);
         dotaAegisInterval = null;
-        output = '▶ Aegis expired!';
+        let output = '▶ Aegis expired!';
         clipboard.writeText(output);
         pasteToChatBox();
     }
@@ -579,10 +578,10 @@ function pasteToChatBox() {
 }
 
 function toHHMMSS(number) {
-    var sec_num = parseInt(number, 10); // don't forget the second param
-    var hours   = Math.floor(sec_num / 3600);
-    var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
-    var seconds = sec_num - (hours * 3600) - (minutes * 60);
+    let sec_num = parseInt(number, 10); // don't forget the second param
+    let hours   = Math.floor(sec_num / 3600);
+    let minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+    let seconds = sec_num - (hours * 3600) - (minutes * 60);
 
     if (hours   < 10) {hours   = "0"+hours;}
     if (minutes < 10) {minutes = "0"+minutes;}
