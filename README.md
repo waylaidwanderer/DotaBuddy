@@ -9,9 +9,9 @@ Releases can be found [here](https://github.com/waylaidwanderer/DotaBuddy/releas
 ## Features
 * View public match history of each player when loading into a game, including hero played, win/loss and k/d/a
 * Roshan/Aegis timer
-    * Press Insert to start Roshan/Aegis timer (Press CmdOrCtrl+Alt+Insert to clear both Roshan/Aegis timers)
-    * Press Alt+Insert to only start Roshan timer
-    * Press Home to only start Aegis Timer (Press CmdOrCtrl+Alt+Home to clear timer)
+    * Press **Insert** to start Roshan/Aegis timer (Press **CmdOrCtrl+Alt+Insert** to clear both Roshan/Aegis timers)
+    * Press **Alt+Insert** to only start Roshan timer
+    * Press **Home** to only start Aegis Timer (Press **CmdOrCtrl+Alt+Home** to clear Aegis timer)
 
 # Quick start
 
