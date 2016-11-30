@@ -15,6 +15,13 @@ Releases can be found [here](https://github.com/waylaidwanderer/DotaBuddy/releas
 ![Main Tab, players collapsed](http://i.imgur.com/bb2cZbp.png)
 ![Main Tab, non-public match history](http://i.imgur.com/uBwhmc6.png)
 ![Timers Tab](http://i.imgur.com/uW3a5Gy.png)
+![Roshan/Aegis Timer, in-game](http://i.imgur.com/h5SQySB.png)
+![Roshan/Aegis Timer, in-game reminder](http://i.imgur.com/sauuxMO.png)
+![Aegis Timer, 3 min expiry warning](http://i.imgur.com/O576p6q.png)
+![Aegis Timer, 1 min expiry warning](http://i.imgur.com/h42MRl4.png)
+![Aegis Timer, expired warning](http://i.imgur.com/611sXcn.png)
+![Roshan Timer, minimum spawn time warning](http://i.imgur.com/JMwa6WY.png)
+
 
 # Quick start
 
