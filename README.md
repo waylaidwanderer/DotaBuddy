@@ -10,6 +10,28 @@ Releases can be found [here](https://github.com/waylaidwanderer/DotaBuddy/releas
     * Press **Insert** to start Roshan/Aegis timer (Press **CmdOrCtrl+Alt+Insert** to clear both Roshan/Aegis timers)
     * Press **Alt+Insert** to only start Roshan timer
     * Press **Home** to only start Aegis Timer (Press **CmdOrCtrl+Alt+Home** to clear Aegis timer)
+    
+If you want to use Roshan/Aegis timer, add a file called `gamestate_integration_dotabuddy.cfg` to `path\to\steamapps\common\dota 2 beta\game\dota\cfg\gamestate_integration` (create `gamestate_integration` folder if it doesn't exist), with the following contents:
+
+    "Dota 2 Integration Configuration"
+	{
+	    "uri"           "http://localhost:3222/"
+	    "timeout"       "5.0"
+	    "buffer"        "0.1"
+	    "throttle"      "0.1"
+	    "heartbeat"     "30.0"
+	    "data"
+	    {
+	        "provider"      "1"
+	        "map"           "1"
+	        "player"        "1"
+	        "hero"          "1"
+	        "abilities"     "1"
+	        "items"         "1"
+	    }
+	}
+	
+## Screenshots
 
 ![Main Tab](http://i.imgur.com/56qOtBf.png)
 ![Main Tab, players collapsed](http://i.imgur.com/bb2cZbp.png)
