@@ -5,12 +5,12 @@ import { remote } from 'electron'; // native electron module
 import jetpack from 'fs-jetpack'; // module loaded from npm
 import path from 'path';
 import settings from 'electron-settings';
-import jQuery from 'jquery';
 import SteamApi from 'steam-api';
 import D2gsi from 'dota2-gsi';
 import monitor from 'active-window';
 import robot from 'kbm-robot';
 import co from 'co';
+import request from 'request';
 
 const DotaHelper = require('./lib/dota.js');
 
@@ -263,14 +263,22 @@ document.addEventListener("keydown", function (e) {
 });
 
 function cacheHeroesList(callback) {
-    jQuery.get('http://api.steampowered.com/IEconDOTA2_570/GetHeroes/v1?key='+steamApiKey)
-    .done(function(res) {
+    callback = callback || function() {};
+    request.get('http://api.steampowered.com/IEconDOTA2_570/GetHeroes/v1?key='+steamApiKey, (err, res, body) => {
+        if (err) {
+            console.log(err);
+            return callback(null);
+        }
+        if (res.statusCode != 200) {
+            console.log(res.statusCode, body);
+            return callback(null);
+        }
         heroesListCache = {
             timestamp: Math.round(Date.now()/1000),
-            response: res
+            response: body
         };
         fs.writeFileSync(__dirname + '/heroes.json', JSON.stringify(heroesListCache));
-        if (typeof callback === 'function') callback(res);
+        callback(body);
     });
 }
 
@@ -317,14 +325,15 @@ function renderPlayers(steamIds) {
         }
         try {
             const playerSummariesResult = new Promise((resolve, reject) => {
-                jQuery.get('http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=' + steamApiKey + '&steamids=' + steamId64s.join())
-                    .done((res) => resolve(res))
-                    .fail(() => reject);
+                request.get('http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=' + steamApiKey + '&steamids=' + steamId64s.join(), (err, res, body) => {
+                    if (err) return reject(err);
+                    if (res.statusCode != 200) return reject(res.statusCode, body);
+                    resolve(JSON.parse(body));
+                });
             });
             let res = yield playerSummariesResult;
             if (res.response === undefined || res.response.players === undefined) {
-                setTimeout(() => renderPlayers(steamIds), 2000);
-                return;
+                return setTimeout(() => renderPlayers(steamIds), 2000);
             }
             let players = res.response.players;
             let playerIndex = 0;
@@ -356,9 +365,11 @@ function renderPlayers(steamIds) {
 function renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player, radiant, callback) {
     co(function* () {
         const matchHistoryResults = new Promise((resolve, reject) => {
-            jQuery.get('http://api.steampowered.com/IDOTA2Match_570/GetMatchHistory/v1?key='+steamApiKey+'&game_mode=1,2,3&account_id='+steamId.accountid+'&matches_requested=20')
-                .done(res => resolve(res))
-                .fail(() => reject);
+            request.get('http://api.steampowered.com/IDOTA2Match_570/GetMatchHistory/v1?key='+steamApiKey+'&game_mode=1,2,3&account_id='+steamId.accountid+'&matches_requested=20', (err, res, body) => {
+                if (err) return reject(err);
+                if (res.statusCode != 200) return reject(res.statusCode, body);
+                resolve(JSON.parse(body));
+            });
         });
         let res;
         try {
@@ -433,8 +444,11 @@ function renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player,
 
 function updateMmr(playerObject, steamId, fail) {
     fail = fail | 1;
-    jQuery.get('https://api.opendota.com/api/players/' + steamId.accountid)
-    .done(function(res) {
+    request.get('https://api.opendota.com/api/players/' + steamId.accountid, (err, response, body) => {
+        if (err || response.statusCode != 200) return setTimeout(function() {
+            updateMmr(playerObject, steamId, fail + 1);
+        }, fail * 1000);
+        let res = JSON.parse(body);
         if (res.solo_competitive_rank != null) {
             Vue.set(playerObject, 'solo_mmr', res.solo_competitive_rank);
         }
@@ -444,11 +458,6 @@ function updateMmr(playerObject, steamId, fail) {
         if (res.mmr_estimate != null && res.mmr_estimate.n != 0) {
             Vue.set(playerObject, 'estimated_mmr', res.mmr_estimate.estimate);
         }
-    })
-    .fail(function() {
-        setTimeout(function() {
-            updateMmr(playerObject, steamId, fail + 1);
-        }, fail * 1000);
     });
 }
 
@@ -457,14 +466,13 @@ function getMatchDetails(matchId, callback) {
     if (matchDetails.hasOwnProperty(matchId)) {
         callback(matchDetails[matchId]);
     } else {
-        jQuery.get('http://api.steampowered.com/IDOTA2Match_570/GetMatchDetails/v1?key='+steamApiKey+'&match_id='+matchId)
-        .done(function(res) {
-            matchDetails[matchId] = res.result;
-            callback(res.result);
-        }).fail(function() {
-            setTimeout(function() {
+        request.get('http://api.steampowered.com/IDOTA2Match_570/GetMatchDetails/v1?key='+steamApiKey+'&match_id='+matchId, (err, response, body) => {
+            if (err || response.statusCode != 200) return setTimeout(function() {
                 getMatchDetails(matchId, callback);
             }, 2000);
+            let res = JSON.parse(body);
+            matchDetails[matchId] = res.result;
+            callback(res.result);
         });
     }
 }
