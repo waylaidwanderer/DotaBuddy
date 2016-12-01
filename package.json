@@ -3,7 +3,7 @@
     "appId": "net.jzhang.dotabuddy",
     "app-category-type": "gaming",
     "asar": false,
-    "compression": "store",
+    "compression": "maximum",
     "win": {
       "target": [
         "nsis"

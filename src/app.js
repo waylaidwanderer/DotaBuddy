@@ -6,9 +6,7 @@ import jetpack from 'fs-jetpack'; // module loaded from npm
 import path from 'path';
 import settings from 'electron-settings';
 import jQuery from 'jquery';
-import SteamID from 'steamid';
 import SteamApi from 'steam-api';
-import async from 'async';
 import D2gsi from 'dota2-gsi';
 import monitor from 'active-window';
 import robot from 'kbm-robot';
