@@ -275,7 +275,7 @@ function cacheHeroesList(callback) {
         }
         heroesListCache = {
             timestamp: Math.round(Date.now()/1000),
-            response: body
+            response: JSON.parse(body)
         };
         fs.writeFileSync(__dirname + '/heroes.json', JSON.stringify(heroesListCache));
         callback(body);
