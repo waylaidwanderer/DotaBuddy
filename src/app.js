@@ -1,3 +1,4 @@
+"use strict";
 import os from 'os'; // native node.js module
 import fs from 'fs';
 import { remote } from 'electron'; // native electron module
@@ -11,6 +12,7 @@ import async from 'async';
 import D2gsi from 'dota2-gsi';
 import monitor from 'active-window';
 import robot from 'kbm-robot';
+import co from 'co';
 
 const DotaHelper = require('./lib/dota.js');
 
@@ -302,33 +304,39 @@ function getHeroById(id) {
 }
 
 function renderPlayers(steamIds) {
-    if (steamIds.length == 0 || steamApiKey == '') return;
-    updateServerLogStatus('Lobby found, retrieving player details...');
-    radiantPlayers.players = [];
-    direPlayers.players = [];
-    for (let i = 0; i < 5; i++) {
-        radiantPlayers.players.push(initialPlayerState());
-        direPlayers.players.push(initialPlayerState());
-    }
-    let steamId64s = [];
-    steamIds.forEach(function(steamId) {
-        steamId64s.push(steamId.getSteamID64());
-    });
-    jQuery.get('http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=' + steamApiKey + '&steamids=' + steamId64s.join())
-    .done(function(res) {
-        if (res.response === undefined || res.response.players === undefined) {
-            setTimeout(function() {
-                renderPlayers(steamIds);
-            }, 2000);
-            return;
+    co(function* () {
+        if (steamIds.length == 0 || steamApiKey == '') return;
+        updateServerLogStatus('Lobby found, retrieving player details...');
+        radiantPlayers.players = [];
+        direPlayers.players = [];
+        for (let i = 0; i < 5; i++) {
+            radiantPlayers.players.push(initialPlayerState());
+            direPlayers.players.push(initialPlayerState());
         }
-        let players = res.response.players;
-        let playerIndex = 0;
-        let radiantIndex = 0;
-        let direIndex = 0;
-        steamIds.forEach(function(steamId) {
-            $.each(players, function(index, player) {
-                if (player.steamid == steamId.getSteamID64()) {
+        let steamId64s = [];
+        for (let i = 0; i < steamIds.length; i++) {
+            steamId64s.push(steamIds[i].getSteamID64());
+        }
+        try {
+            const playerSummariesResult = new Promise((resolve, reject) => {
+                jQuery.get('http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=' + steamApiKey + '&steamids=' + steamId64s.join())
+                    .done((res) => resolve(res))
+                    .fail(() => reject);
+            });
+            let res = yield playerSummariesResult;
+            if (res.response === undefined || res.response.players === undefined) {
+                setTimeout(() => renderPlayers(steamIds), 2000);
+                return;
+            }
+            let players = res.response.players;
+            let playerIndex = 0;
+            let radiantIndex = 0;
+            let direIndex = 0;
+            for (let i = 0; i < steamIds.length; i++) {
+                let steamId = steamIds[i];
+                for (let j = 0; j < players.length; j++) {
+                    let player = players[j];
+                    if (player.steamid != steamId.getSteamID64()) continue;
                     if (playerIndex > 4) {
                         renderMatchHistory(steamIds.length, playerIndex, direIndex, steamId, player, false);
                         direIndex++;
@@ -336,23 +344,31 @@ function renderPlayers(steamIds) {
                         renderMatchHistory(steamIds.length, playerIndex, radiantIndex, steamId, player, true);
                         radiantIndex++;
                     }
-                    return false;
+                    break;
                 }
-            });
-            playerIndex++;
-        });
-        updateServerLogStatus('Waiting for game to start...');
-    })
-    .fail(function() {
-        setTimeout(function() {
-            renderPlayers(steamIds);
-        }, 2000);
+                playerIndex++;
+            }
+            updateServerLogStatus('Waiting for game to start...');
+        } catch (err) {
+            setTimeout(() => renderPlayers(steamIds), 2000);
+        }
     });
 }
 
 function renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player, radiant, callback) {
-    jQuery.get('http://api.steampowered.com/IDOTA2Match_570/GetMatchHistory/v1?key='+steamApiKey+'&game_mode=1,2,3&account_id='+steamId.accountid+'&matches_requested=20')
-    .done(function(res) {
+    co(function* () {
+        const matchHistoryResults = new Promise((resolve, reject) => {
+            jQuery.get('http://api.steampowered.com/IDOTA2Match_570/GetMatchHistory/v1?key='+steamApiKey+'&game_mode=1,2,3&account_id='+steamId.accountid+'&matches_requested=20')
+                .done(res => resolve(res))
+                .fail(() => reject);
+        });
+        let res;
+        try {
+            res = yield matchHistoryResults;
+        } catch (err) {
+            console.log(err);
+            return setTimeout(() => renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player, radiant, callback), 2000);
+        }
         let result = res.result;
         let heroes = [];
         for (let i = 0; i < 20; i++) {
@@ -375,26 +391,28 @@ function renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player,
             }
         } catch (err) {
             console.log(err);
-            setTimeout(function() {
-                renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player, radiant, callback);
-            }, 2000);
-            return false;
+            return setTimeout(() => renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player, radiant, callback), 2000);
         }
         updateMmr(playerObject, steamId);
         if (result.status != 1) return;
-        $.each(result.matches, function(matchIndex, match) {
-            $.each(match.players, function(matchPlayerIndex, matchPlayer) {
-                if (matchPlayer.account_id != steamId.accountid) return true;
-                getMatchDetails(match.match_id, function setPlayerHeroes(details) {
+        for (let matchIndex = 0; matchIndex < result.matches.length; matchIndex++) {
+            let match = result.matches[matchIndex];
+            for (let matchPlayerIndex = 0; matchPlayerIndex < match.players.length; matchPlayerIndex++) {
+                let matchPlayer = match.players[matchPlayerIndex];
+                if (matchPlayer.account_id != steamId.accountid) continue;
+                new Promise(resolve => {
+                    getMatchDetails(match.match_id, details => resolve(details));
+                }).then(details => {
                     let kda = 'N/A';
                     let win = true;
-                    $.each(details.players, function(dpI, detailPlayer) {
-                        if (detailPlayer.account_id != steamId.accountid) return true;
+                    for (let i = 0; i < details.players.length; i++) {
+                        let detailPlayer = details.players[i];
+                        if (detailPlayer.account_id != steamId.accountid) continue;
                         kda = detailPlayer.kills + '/' + detailPlayer.deaths + '/' + detailPlayer.assists;
                         let radiant = detailPlayer.player_slot <= 4;
                         win = details.radiant_win == radiant;
-                        return false;
-                    });
+                        break;
+                    }
                     let hero = getHeroById(matchPlayer.hero_id);
                     let heroName = hero.name.replace('npc_dota_hero_', '');
                     try {
@@ -406,20 +424,12 @@ function renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player,
                         });
                     } catch (err) {
                         console.log(err);
-                        setTimeout(function() {
-                            renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player, radiant, callback);
-                        }, 2000);
-                        return false;
+                        return setTimeout(() => renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player, radiant, callback), 2000);
                     }
                 });
-                return false;
-            });
-        });
-    })
-    .fail(function() {
-        setTimeout(function() {
-            renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player, radiant, callback);
-        }, 2000);
+                break;
+            }
+        }
     });
 }
 
