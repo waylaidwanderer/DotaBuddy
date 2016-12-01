@@ -8,6 +8,9 @@
   "homepage": "http://jzhang.net",
   "license": "GPLv3",
   "main": "background.js",
+  "scripts": {
+    "install32": "SET npm_config_arch=ia32 && npm install"
+  },
   "dependencies": {
     "active-window": "^0.1.0",
     "chokidar": "^1.6.0",
