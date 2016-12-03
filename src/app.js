@@ -178,6 +178,10 @@ $(window).resize(function() {
 
 robot.startJar();
 
+window.onbeforeunload = () => {
+    robot.stopJar();
+};
+
 $(document).ready(function() {
     $('main').perfectScrollbar();
 });
