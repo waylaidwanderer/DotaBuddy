@@ -114,9 +114,29 @@
             </div>
         </div>
     </main>
+
+    <div id="update" class="modal modal-fixed-footer">
+        <div class="modal-content">
+            <h4>DotaBuddy {{ version }} - Update Available</h4>
+            <div class="update">
+                {{{ description }}}
+                <h2>Downloads</h2>
+                <ul>
+                    <li v-for="asset in assets">
+                        <a class="secondary-text" :href="asset.browser_download_url" target="_blank">{{ asset.name }} ({{ (asset.size / 1024 / 1024).toFixed(1) }} MB)</a>
+                    </li>
+                </ul>
+                <a class="secondary-text" :href="url" target="_blank" style="text-decoration: underline;">View Release on GitHub</a>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat ">Close</a>
+        </div>
+    </div>
+
     <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
     <script src="js/vue.js"></script>
-    <script src="js/jquery-3.1.1.min.js"></script>
+    <script src="js/jquery-2.2.4.min.js"></script>
     <script src="js/materialize.min.js"></script>
     <script src="js/perfect-scrollbar.jquery.min.js"></script>
     <script src="helpers/context_menu.js"></script>

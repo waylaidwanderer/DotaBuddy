@@ -156,6 +156,32 @@ $heroWidth: 205px / 2;
     }
 }
 
+.update {
+    ul {
+        list-style: disc inside;
+    }
+    ol {
+        list-style: decimal inside;
+    }
+    ul ul, ol ul {
+        list-style: circle inside;
+        margin-left: 15px;
+    }
+    ol ol, ul ol {
+        list-style: lower-latin inside;
+        margin-left: 15px;
+    }
+    li {
+        list-style-type: inherit;
+    }
+    h1 { font-size: $h1-fontsize * 0.5; }
+    h2 { font-size: $h2-fontsize * 0.5; }
+    h3 { font-size: $h3-fontsize * 0.5; }
+    h4 { font-size: $h4-fontsize * 0.5; }
+    h5 { font-size: $h5-fontsize * 0.5; }
+    h6 { font-size: $h6-fontsize * 0.5; }
+}
+
 .hidden {
     display: none !important;
 }

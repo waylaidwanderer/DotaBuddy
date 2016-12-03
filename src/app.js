@@ -12,6 +12,7 @@ import robot from 'kbm-robot';
 import co from 'co';
 import request from 'request';
 import compareVersions from 'compare-versions';
+import marked from 'marked';
 
 const DotaHelper = require('./lib/dota.js');
 
@@ -266,6 +267,8 @@ document.addEventListener("keydown", function (e) {
         location.reload();
     }
 });
+
+checkForUpdate();
 
 function cacheHeroesList(callback) {
     callback = callback || function() {};
@@ -639,9 +642,14 @@ function initialHeroState() {
 function checkForUpdate() {
     co(function* () {
         const getLatestReleaseResult = new Promise((resolve, reject) => {
-            request.get('https://api.github.com/repos/waylaidwanderer/DotaBuddy/releases/latest', (err, res, body) => {
+            request.get({
+                url: 'https://api.github.com/repos/waylaidwanderer/DotaBuddy/releases/latest',
+                headers: {
+                    'User-Agent': 'DotaBuddy ' + manifest.version
+                }
+            }, (err, res, body) => {
                 if (err) return reject(err);
-                if (res.statusCode != 200) return reject(res.statusCode, body);
+                if (res.statusCode != 200) return reject(res.statusCode + "\n" + body);
                 resolve(JSON.parse(body));
             });
         });
@@ -652,11 +660,15 @@ function checkForUpdate() {
             return console.log(err);
         }
         if (compareVersions(latestRelease.tag_name, manifest.version) != 1) return;
-        let description = latestRelease.body;
-        // latestRelease.html_url
-        for (let i = 0; i < latestRelease.assets.length; i++) {
-            let asset = latestRelease.assets[i];
-            // asset.name, asset.browser_download_url, asset.bsize
-        }
+        new Vue({
+            el: '#update',
+            data: {
+                version: latestRelease.tag_name,
+                url: latestRelease.html_url,
+                description: marked(latestRelease.body),
+                assets: latestRelease.assets // asset.name, asset.browser_download_url, asset.bsize
+            }
+        });
+        $('#update').openModal();
     });
 }
