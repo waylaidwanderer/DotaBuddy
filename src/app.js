@@ -11,6 +11,7 @@ import monitor from 'active-window';
 import robot from 'kbm-robot';
 import co from 'co';
 import request from 'request';
+import compareVersions from 'compare-versions';
 
 const DotaHelper = require('./lib/dota.js');
 
@@ -633,4 +634,29 @@ function initialHeroState() {
         img: undefined,
         match_id: undefined,
     };
+}
+
+function checkForUpdate() {
+    co(function* () {
+        const getLatestReleaseResult = new Promise((resolve, reject) => {
+            request.get('https://api.github.com/repos/waylaidwanderer/DotaBuddy/releases/latest', (err, res, body) => {
+                if (err) return reject(err);
+                if (res.statusCode != 200) return reject(res.statusCode, body);
+                resolve(JSON.parse(body));
+            });
+        });
+        let latestRelease;
+        try {
+            latestRelease = yield getLatestReleaseResult;
+        } catch (err) {
+            return console.log(err);
+        }
+        if (compareVersions(latestRelease.tag_name, manifest.version) != 1) return;
+        let description = latestRelease.body;
+        // latestRelease.html_url
+        for (let i = 0; i < latestRelease.assets.length; i++) {
+            let asset = latestRelease.assets[i];
+            // asset.name, asset.browser_download_url, asset.bsize
+        }
+    });
 }
