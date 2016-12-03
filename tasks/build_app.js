@@ -18,6 +18,10 @@ gulp.task('bundle', function () {
     return Promise.all([
         bundle(srcDir.path('background.js'), destDir.path('background.js')),
         bundle(srcDir.path('app.js'), destDir.path('app.js')),
+        bundle(srcDir.path('lib/dota.js'), destDir.path('lib/dota.js')),
+        bundle(srcDir.path('lib/listeners.js'), destDir.path('lib/listeners.js')),
+        bundle(srcDir.path('lib/stats.js'), destDir.path('lib/stats.js')),
+        bundle(srcDir.path('lib/timers.js'), destDir.path('lib/timers.js'))
     ]);
 });
 
