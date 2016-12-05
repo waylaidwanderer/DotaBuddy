@@ -185,3 +185,28 @@ $heroWidth: 205px / 2;
 .hidden {
     display: none !important;
 }
+
+.dota-timer {
+    .content-container {
+        position: absolute;
+        height: 300px;
+        img {
+            height: 150px;
+            width: 150px;
+            left: 0;
+            right: 0;
+            top: 75px;
+            bottom: 0;
+            margin: 0 auto;
+            position: absolute;
+            opacity: 0;
+        }
+    }
+    .timer-progress {
+        height: 300px;
+    }
+    .timer-progress > svg {
+        height: 100%;
+        display: block;
+    }
+}

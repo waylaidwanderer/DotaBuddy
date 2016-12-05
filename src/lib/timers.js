@@ -1,7 +1,9 @@
+const co = require('co');
 const monitor = require('active-window');
 const remote = require('electron').remote;
 const robot = require('kbm-robot');
 const D2gsi = require('dota2-gsi');
+const DotaTimer = require('./dota_timer');
 
 const clipboard = remote.clipboard;
 const globalShortcut = remote.globalShortcut;
@@ -10,10 +12,15 @@ const gsiListener = new D2gsi({port: 3222});
 let dotaGsiClockTime;
 let dotaRoshanInterval;
 let dotaRoshanRespawnTime;
+let dotaRoshanLastGsiClockTime;
 let dotaAegisInterval;
 let dotaAegisExpireTime;
+let dotaAegisLastGsiClockTime;
+let dotaRoshanTimer;
+let dotaAegisTimer;
 
 robot.startJar();
+// TODO: implement disable chat macros
 
 window.onbeforeunload = () => {
     robot.stopJar();
@@ -70,14 +77,35 @@ monitor.getActiveWindow(function(window) {
 gsiListener.events.on('newclient', function(client) {
     updateGsiStatus('listening for events...');
     client.on('newdata', function(data) {
-        if (data.map === undefined) return;
+        if (data.map === undefined) return console.log(data);
+        // TODO: clear timers if game ended
         if (data.map.game_state == "DOTA_GAMERULES_STATE_PRE_GAME" || data.map.game_state == "DOTA_GAMERULES_STATE_GAME_IN_PROGRESS") {
             dotaGsiClockTime = data.map.clock_time;
+            if (dotaRoshanTimer.timer._paused) dotaRoshanTimer.timer.resume();
+            if (dotaAegisTimer.timer._paused) dotaAegisTimer.timer.resume();
         } else {
             dotaGsiClockTime = undefined;
         }
     });
 });
+
+$('a[href="#timers"]').click(() => {
+    resizeWindow();
+    function resizeWindow() {
+        if ($('#timers').css('display') == 'none') return setTimeout(resizeWindow, 1);
+        $(window).resize();
+    }
+});
+$(window).resize(() => {
+    const $dotaTimer = $('.dota-timer');
+    const $contentContainer = $dotaTimer.find('.content-container');
+    const $timerProgress = $dotaTimer.find('.timer-progress');
+    $contentContainer.width($timerProgress.width());
+    $contentContainer.find('img').animate({'opacity': 0.6});
+});
+
+dotaRoshanTimer = new DotaTimer('#roshan-timer .timer-progress');
+dotaAegisTimer = new DotaTimer('#aegis-timer .timer-progress');
 
 function updateGsiStatus(message) {
     $('#gsi-status').html(message);
@@ -104,21 +132,21 @@ function startRoshanTimer(shouldStartAegisTimer) {
         }
     } else {
         dotaRoshanRespawnTime = roshanMinSpawnTime;
-        dotaRoshanInterval = setInterval(onRoshanTimerTick, 750);
+        dotaRoshanInterval = setInterval(onRoshanTimerTick, 1000);
+        dotaRoshanTimer.timer.tick(function(tick) {
+            $('#roshan-timer').find('.progressbar-text').text(toHHMMSS(tick, true));
+        }).countdown(480);
     }
     output += 'Roshan respawn: ' + roshanMinSpawnTimeHuman + ' - ' + roshanMaxSpawnTimeHuman;
+
     clipboard.writeText(output);
     pasteToChatBox();
     if (shouldStartAegisTimer) {
-        (function(dotaGsiClockTime) {
-            setTimeout(function() {
-                startAegisTimer(dotaGsiClockTime + 300)
-            }, 1000);
-        })(dotaGsiClockTime);
+        startAegisTimer(dotaGsiClockTime + 300, true);
     }
 }
 
-function startAegisTimer(time) {
+function startAegisTimer(time, wait) {
     if (dotaGsiClockTime === undefined) {
         console.log('Game not in progress');
         return;
@@ -132,14 +160,25 @@ function startAegisTimer(time) {
         aegisSpawnTime = toHHMMSS(dotaAegisExpireTime);
     } else {
         dotaAegisExpireTime = time;
-        dotaAegisInterval = setInterval(onAegisTimerTick, 750);
+        dotaAegisInterval = setInterval(onAegisTimerTick, 1000);
+        dotaAegisTimer.timer.tick(function(tick) {
+            $('#aegis-timer').find('.progressbar-text').text(toHHMMSS(tick, true));
+        }).countdown(300);
     }
     output += 'Aegis expires: ' + aegisSpawnTime;
-    clipboard.writeText(output);
-    pasteToChatBox();
+    if (wait) {
+        setTimeout(() => {
+            clipboard.writeText(output);
+            pasteToChatBox();
+        }, 1000);
+    }
 }
 
 function onRoshanTimerTick() {
+    if (dotaGsiClockTime == dotaRoshanLastGsiClockTime && !dotaRoshanTimer.timer._paused) {
+        dotaRoshanTimer.timer.pause();
+    }
+    dotaRoshanLastGsiClockTime = dotaGsiClockTime;
     if (dotaRoshanRespawnTime - dotaGsiClockTime == 0) {
         clearInterval(dotaRoshanInterval);
         dotaRoshanInterval = null;
@@ -150,7 +189,11 @@ function onRoshanTimerTick() {
 }
 
 function onAegisTimerTick() {
-    let secondsLeft = dotaAegisExpireTime  - dotaGsiClockTime;
+    if (dotaGsiClockTime == dotaAegisLastGsiClockTime && !dotaAegisTimer.timer._paused) {
+        dotaAegisTimer.timer.pause();
+    }
+    dotaAegisLastGsiClockTime = dotaGsiClockTime;
+    let secondsLeft = dotaAegisExpireTime - dotaGsiClockTime;
     if (secondsLeft == 180) {
         let output = '▶ Aegis expires in 3 minutes.';
         clipboard.writeText(output);
@@ -177,6 +220,7 @@ function clearRoshanTimer() {
     if (dotaRoshanInterval) {
         clearInterval(dotaRoshanInterval);
         dotaRoshanInterval = null;
+        dotaRoshanTimer.stop();
     }
 }
 
@@ -184,6 +228,7 @@ function clearAegisTimer() {
     if (dotaAegisInterval) {
         clearInterval(dotaAegisInterval);
         dotaAegisInterval = null;
+        dotaAegisTimer.stop();
     }
 }
 
@@ -191,11 +236,18 @@ function pasteToChatBox() {
     robot.type("enter", 50).press("ctrl").type("v", 10).release("ctrl").sleep(50).type("enter").go();
 }
 
-function toHHMMSS(number) {
-    let sec_num = parseInt(number, 10); // don't forget the second param
+function toHHMMSS(number, milliseconds, precision = 0) {
+    if (milliseconds) number /= 1000;
+    let sec_num =  parseFloat(number);
+    if (milliseconds && precision == 0) {
+        sec_num = Math.ceil(sec_num);
+    }
     let hours   = Math.floor(sec_num / 3600);
     let minutes = Math.floor((sec_num - (hours * 3600)) / 60);
     let seconds = sec_num - (hours * 3600) - (minutes * 60);
+    if (milliseconds) {
+        seconds = seconds.toFixed(precision);
+    }
 
     if (hours   < 10) {hours   = "0"+hours;}
     if (minutes < 10) {minutes = "0"+minutes;}
