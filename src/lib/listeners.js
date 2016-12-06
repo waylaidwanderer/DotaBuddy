@@ -57,3 +57,11 @@ document.addEventListener("keydown", function (e) {
         location.reload();
     }
 });
+
+$('.players').mouseenter(function() {
+    $(this).find('.kda').hide();
+    $(this).find('.gpm-xpm').fadeIn('fast');
+}).mouseleave(function() {
+    $(this).find('.gpm-xpm').hide();
+    $(this).find('.kda').fadeIn('fast');
+});

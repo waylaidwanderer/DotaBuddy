@@ -262,11 +262,15 @@ function renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player,
                     getMatchDetails(match.match_id, details => resolve(details));
                 }).then(details => {
                     let kda = 'N/A';
+                    let xpm = 0;
+                    let gpm = 0;
                     let win = true;
                     for (let i = 0; i < details.players.length; i++) {
                         let detailPlayer = details.players[i];
                         if (detailPlayer.account_id != steamId.accountid) continue;
                         kda = detailPlayer.kills + '/' + detailPlayer.deaths + '/' + detailPlayer.assists;
+                        xpm = detailPlayer.xp_per_min;
+                        gpm = detailPlayer.gold_per_min;
                         let radiant = detailPlayer.player_slot <= 4;
                         win = details.radiant_win == radiant;
                         break;
@@ -278,6 +282,8 @@ function renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player,
                             img: 'http://cdn.dota2.com/apps/dota2/images/heroes/' + heroName + '_lg.png',
                             kda: kda,
                             win: win,
+                            gpm: gpm,
+                            xpm: xpm,
                             match_id: match.match_id
                         });
                     } catch (err) {
@@ -350,6 +356,8 @@ function initialHeroState() {
     return {
         win: true,
         kda: undefined,
+        gpm: undefined,
+        xpm: undefined,
         img: undefined,
         match_id: undefined,
     };
