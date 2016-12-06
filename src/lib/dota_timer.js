@@ -54,7 +54,7 @@ class DotaProgressBar extends ProgressBar.Circle {
         this.progress = null;
     }
 
-    countdown(seconds, count) {
+    countdown(seconds, count, adjust) {
         if (this._ticking) throw 'Timer is already ticking.';
         const interval = 100;
         let expected = Date.now() + interval;
@@ -62,6 +62,10 @@ class DotaProgressBar extends ProgressBar.Circle {
         this.seconds = seconds;
         let milliseconds = seconds * 1000;
         count = count || milliseconds;
+        if (adjust) {
+            count = count + (adjust * 1000);
+            this.progress = 1 - count / milliseconds;
+        }
         this.count = count;
         this._ticking = true;
         let initialProgress = -this.progress || 0;
@@ -103,11 +107,10 @@ class DotaProgressBar extends ProgressBar.Circle {
         this._ticking = false;
     }
 
-    // TODO: resume parameters so that we can catch up or rewind a second
     resume() {
         if (!this._paused) throw 'Nothing to resume.';
         this._paused = false;
-        this.countdown(null, this.count);
+        this.countdown(null, this.count, 1);
     }
 }
 

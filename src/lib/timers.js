@@ -39,8 +39,12 @@ settings.get('disable_timers').then(val => {
 });
 
 window.onbeforeunload = () => {
-    robot.stopJar();
-    console.log('kbm-robot stopped.');
+    try {
+        robot.stopJar();
+        console.log('kbm-robot stopped.');
+    } catch(err) {
+
+    }
 };
 
 monitor.getActiveWindow(function(window) {
@@ -191,7 +195,6 @@ function startRoshanTimer(shouldStartAegisTimer) {
         }
         const str = 'Roshan respawn: ' + roshanMinSpawnTimeHuman + ' - ' + roshanMaxSpawnTimeHuman;
         output += str;
-        let clipboardStr = '';
         dotaRoshanClipboard = str;
         clipboard.writeText(output);
         let pasteResult = pasteToChatBox();
