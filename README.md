@@ -5,7 +5,7 @@ DotaBuddy is a cross-platform, open-source application with helpful features for
 Releases can be found [here](https://github.com/waylaidwanderer/DotaBuddy/releases).
 
 ## Features
-* View public match history of each player when loading into a game, including hero played, win/loss and k/d/a
+* View public match history of each player when loading into a game, including hero played, win/loss, K/D/A and GPM/XPM
 * Roshan/Aegis timer
     * Press **Insert** to start Roshan/Aegis timer (Press **CmdOrCtrl+Alt+Insert** to clear both Roshan/Aegis timers)
     * Press **Alt+Insert** to only start Roshan timer
@@ -36,7 +36,8 @@ If you want to use Roshan/Aegis timer, add a file called `gamestate_integration_
 ![Main Tab](http://i.imgur.com/56qOtBf.png)
 ![Main Tab, players collapsed](http://i.imgur.com/bb2cZbp.png)
 ![Main Tab, non-public match history](http://i.imgur.com/uBwhmc6.png)
-![Timers Tab](http://i.imgur.com/uW3a5Gy.png)
+![Main Tab, show GPM/XPM on hover (v0.2.0+)](http://i.imgur.com/FNKTxUt.png)
+![Timers Tab (v0.2.0+)](http://i.imgur.com/AwEkslH.png)
 ![Roshan/Aegis Timer, in-game](http://i.imgur.com/h5SQySB.png)
 ![Roshan/Aegis Timer, in-game reminder](http://i.imgur.com/sauuxMO.png)
 ![Aegis Timer, 3 min expiry warning](http://i.imgur.com/O576p6q.png)
