@@ -96,18 +96,51 @@
                         </div>
                     </div>
                 </div>
-                <div id="timers" class="col s12">
+                <div id="timers" class="col s12" style="display: none;">
                     <div class="row">
                         <p class="col s12">
                             <strong class="secondary-text">Game State Integration status: </strong> <span id="gsi-status">inactive</span>
                         </p>
                         <div class="col s12">
-                            Graphical timers coming soon!
+                            <br/>
+                            <div class="switch">
+                                <label>
+                                    <span class="grey-text text-lighten-3" style="font-size: 1rem;">Disable Roshan/Aegis Timers</span>
+                                    <input type="checkbox" id="disable-timers">
+                                    <span class="lever"></span>
+                                </label>
+                            </div>
+                            <br/>
+                            <div class="switch">
+                                <label>
+                                    <span class="grey-text text-lighten-3" style="font-size: 1rem;">Disable Chat Macros Only</span>
+                                    <input type="checkbox" id="disable-chat-macros">
+                                    <span class="lever"></span>
+                                </label>
+                            </div>
+                            <br/>
                             <ul>
                                 <li>Press <strong>Insert</strong> to start Roshan/Aegis timer (Press <strong>CmdOrCtrl+Alt+Insert</strong> to clear both Roshan/Aegis timers)</li>
                                 <li>Press <strong>Alt+Insert</strong> to only start Roshan timer</li>
                                 <li>Press <strong>Home</strong> to only start Aegis Timer (Press <strong>CmdOrCtrl+Alt+Home</strong> to clear timer)</li>
                             </ul>
+                        </div>
+                        <p class="col s12"></p>
+                        <div class="col l8 offset-l2 s12">
+                            <div class="row">
+                                <div class="col s6 dota-timer" id="roshan-timer">
+                                    <div class="content-container">
+                                        <img src="img/roshan.png"/>
+                                    </div>
+                                    <div class="timer-progress"></div>
+                                </div>
+                                <div class="col s6 dota-timer" id="aegis-timer">
+                                    <div class="content-container">
+                                        <img src="img/aegis.png"/>
+                                    </div>
+                                    <div class="timer-progress"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

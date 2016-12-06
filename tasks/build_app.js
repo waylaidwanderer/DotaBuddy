@@ -21,6 +21,7 @@ gulp.task('bundle', function () {
         bundle(srcDir.path('lib/dota.js'), destDir.path('lib/dota.js')),
         bundle(srcDir.path('lib/listeners.js'), destDir.path('lib/listeners.js')),
         bundle(srcDir.path('lib/stats.js'), destDir.path('lib/stats.js')),
+        bundle(srcDir.path('lib/dota_timer.js'), destDir.path('lib/dota_timer.js')),
         bundle(srcDir.path('lib/timers.js'), destDir.path('lib/timers.js'))
     ]);
 });
