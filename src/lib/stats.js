@@ -176,10 +176,10 @@ function renderPlayers(steamIds) {
             steamIds.forEach((steamId, i) => {
                 const player = players.find(player => player.steamid == steamId.getSteamID64());
                 if (i > 4) {
-                    renderMatchHistory(steamIds.length, i, direIndex, steamId, player, false);
+                    renderMatchHistory(i, direIndex, steamId, player, false);
                     direIndex++;
                 } else {
-                    renderMatchHistory(steamIds.length, i, radiantIndex, steamId, player, true);
+                    renderMatchHistory(i, radiantIndex, steamId, player, true);
                     radiantIndex++;
                 }
             });
@@ -190,7 +190,7 @@ function renderPlayers(steamIds) {
     });
 }
 
-function renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player, radiant, callback) {
+function renderMatchHistory(playerIndex, teamIndex, steamId, player, radiant, callback) {
     co(function* () {
         const matchHistoryResults = new Promise((resolve, reject) => {
             request.get('http://api.steampowered.com/IDOTA2Match_570/GetMatchHistory/v1?key='+steamApiKey+'&game_mode=1,2,3&account_id='+steamId.accountid+'&matches_requested=20', (err, res, body) => {
@@ -204,7 +204,7 @@ function renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player,
             res = yield matchHistoryResults;
         } catch (err) {
             console.log(err);
-            return setTimeout(() => renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player, radiant, callback), 2000);
+            return setTimeout(() => renderMatchHistory(playerIndex, teamIndex, steamId, player, radiant, callback), 2000);
         }
         let result = res.result;
         let heroes = new Array(20).fill(null).map(initialHeroState);
@@ -225,7 +225,7 @@ function renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player,
             }
         } catch (err) {
             console.log(err);
-            return setTimeout(() => renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player, radiant, callback), 2000);
+            return setTimeout(() => renderMatchHistory(playerIndex, teamIndex, steamId, player, radiant, callback), 2000);
         }
         updateMmr(playerObject, steamId);
         if (result.status != 1) return;
@@ -253,7 +253,7 @@ function renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player,
                     });
                 } catch (err) {
                     console.log(err);
-                    return setTimeout(() => renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player, radiant, callback), 2000);
+                    return setTimeout(() => renderMatchHistory(playerIndex, teamIndex, steamId, player, radiant, callback), 2000);
                 }
             });
         });
