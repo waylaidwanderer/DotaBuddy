@@ -148,30 +148,16 @@ function getHeroesList() {
 
 function getHeroById(id) {
     let heroesList = getHeroesList();
-    let res = null;
-    for (let i = 0; i < heroesList.heroes.length; i++) {
-        let hero = heroesList.heroes[i];
-        if (hero.id != id) continue;
-        res = hero;
-        break;
-    }
-    return res;
+    return heroesList.heroes.find(hero => hero.id == id) || null;
 }
 
 function renderPlayers(steamIds) {
     co(function* () {
         if (steamIds.length == 0 || steamApiKey == '') return;
         updateServerLogStatus('Lobby found, retrieving player details...');
-        radiantPlayers.players = [];
-        direPlayers.players = [];
-        for (let i = 0; i < 5; i++) {
-            radiantPlayers.players.push(initialPlayerState());
-            direPlayers.players.push(initialPlayerState());
-        }
-        let steamId64s = [];
-        for (let i = 0; i < steamIds.length; i++) {
-            steamId64s.push(steamIds[i].getSteamID64());
-        }
+        radiantVue.players = new Array(5).fill(null).map(initialPlayerState);
+        direVue.players = new Array(5).fill(null).map(initialPlayerState);
+        let steamId64s = steamIds.map(steamId => steamId.getSteamID64());
         try {
             const playerSummariesResult = new Promise((resolve, reject) => {
                 request.get('http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=' + steamApiKey + '&steamids=' + steamId64s.join(), (err, res, body) => {
@@ -185,25 +171,18 @@ function renderPlayers(steamIds) {
                 return setTimeout(() => renderPlayers(steamIds), 2000);
             }
             let players = res.response.players;
-            let playerIndex = 0;
             let radiantIndex = 0;
             let direIndex = 0;
-            for (let i = 0; i < steamIds.length; i++) {
-                let steamId = steamIds[i];
-                for (let j = 0; j < players.length; j++) {
-                    let player = players[j];
-                    if (player.steamid != steamId.getSteamID64()) continue;
-                    if (playerIndex > 4) {
-                        renderMatchHistory(steamIds.length, playerIndex, direIndex, steamId, player, false);
-                        direIndex++;
-                    } else {
-                        renderMatchHistory(steamIds.length, playerIndex, radiantIndex, steamId, player, true);
-                        radiantIndex++;
-                    }
-                    break;
+            steamIds.forEach((steamId, i) => {
+                const player = players.find(player => player.steamid == steamId.getSteamID64());
+                if (i > 4) {
+                    renderMatchHistory(steamIds.length, i, direIndex, steamId, player, false);
+                    direIndex++;
+                } else {
+                    renderMatchHistory(steamIds.length, i, radiantIndex, steamId, player, true);
+                    radiantIndex++;
                 }
-                playerIndex++;
-            }
+            });
             updateServerLogStatus('Waiting for game to start...');
         } catch (err) {
             setTimeout(() => renderPlayers(steamIds), 2000);
@@ -228,10 +207,7 @@ function renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player,
             return setTimeout(() => renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player, radiant, callback), 2000);
         }
         let result = res.result;
-        let heroes = [];
-        for (let i = 0; i < 20; i++) {
-            heroes.push(initialHeroState());
-        }
+        let heroes = new Array(20).fill(null).map(initialHeroState);
         let playerObject = {
             user: player,
             accountId: steamId.accountid,
@@ -253,47 +229,34 @@ function renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player,
         }
         updateMmr(playerObject, steamId);
         if (result.status != 1) return;
-        for (let matchIndex = 0; matchIndex < result.matches.length; matchIndex++) {
-            let match = result.matches[matchIndex];
-            for (let matchPlayerIndex = 0; matchPlayerIndex < match.players.length; matchPlayerIndex++) {
-                let matchPlayer = match.players[matchPlayerIndex];
-                if (matchPlayer.account_id != steamId.accountid) continue;
-                new Promise(resolve => {
-                    getMatchDetails(match.match_id, details => resolve(details));
-                }).then(details => {
-                    let kda = 'N/A';
-                    let xpm = 0;
-                    let gpm = 0;
-                    let win = true;
-                    for (let i = 0; i < details.players.length; i++) {
-                        let detailPlayer = details.players[i];
-                        if (detailPlayer.account_id != steamId.accountid) continue;
-                        kda = detailPlayer.kills + '/' + detailPlayer.deaths + '/' + detailPlayer.assists;
-                        xpm = detailPlayer.xp_per_min;
-                        gpm = detailPlayer.gold_per_min;
-                        let radiant = detailPlayer.player_slot <= 4;
-                        win = details.radiant_win == radiant;
-                        break;
-                    }
-                    let hero = getHeroById(matchPlayer.hero_id);
-                    let heroName = hero.name.replace('npc_dota_hero_', '');
-                    try {
-                        playerObject.heroes.$set(matchIndex, {
-                            img: 'http://cdn.dota2.com/apps/dota2/images/heroes/' + heroName + '_lg.png',
-                            kda: kda,
-                            win: win,
-                            gpm: gpm,
-                            xpm: xpm,
-                            match_id: match.match_id
-                        });
-                    } catch (err) {
-                        console.log(err);
-                        return setTimeout(() => renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player, radiant, callback), 2000);
-                    }
-                });
-                break;
-            }
-        }
+        result.matches.forEach((match, matchIndex) => {
+            let matchPlayer = match.players.find(player => player.account_id == steamId.accountid);
+            new Promise(resolve => {
+                getMatchDetails(match.match_id, details => resolve(details));
+            }).then(details => {
+                let detailPlayer = details.players.find(player => player.account_id == steamId.accountid);
+                let kda = detailPlayer.kills + '/' + detailPlayer.deaths + '/' + detailPlayer.assists;
+                let xpm = detailPlayer.xp_per_min;
+                let gpm = detailPlayer.gold_per_min;
+                let radiant = detailPlayer.player_slot <= 4;
+                let win = details.radiant_win == radiant;
+                let hero = getHeroById(matchPlayer.hero_id);
+                let heroName = hero.name.replace('npc_dota_hero_', '');
+                try {
+                    playerObject.heroes.$set(matchIndex, {
+                        img: 'http://cdn.dota2.com/apps/dota2/images/heroes/' + heroName + '_lg.png',
+                        kda: kda,
+                        win: win,
+                        gpm: gpm,
+                        xpm: xpm,
+                        match_id: match.match_id
+                    });
+                } catch (err) {
+                    console.log(err);
+                    return setTimeout(() => renderMatchHistory(numPlayers, playerIndex, teamIndex, steamId, player, radiant, callback), 2000);
+                }
+            });
+        });
     });
 }
 
