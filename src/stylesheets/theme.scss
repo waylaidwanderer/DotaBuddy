@@ -208,3 +208,9 @@ table.striped>tbody>tr {
         overflow: hidden;
     }
 }
+.switch label input[type=checkbox]:checked + .lever {
+    background-color: $colorSecondaryLight !important;
+}
+.switch label input[type=checkbox]:checked + .lever:after {
+    background-color: $colorSecondary !important;
+}
