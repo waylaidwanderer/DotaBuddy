@@ -5,7 +5,6 @@ const remote = require('electron').remote;
 const request = require('request');
 const settings = require('electron-settings');
 const DotaHelper = require('./dota');
-const SteamApi = require('steam-api');
 
 const dialog = remote.dialog;
 const dotaHelper = new DotaHelper();
@@ -37,8 +36,6 @@ const direVue = new Vue({
     }
 });
 
-let steamApiKey = '';
-let steamUser;
 let serverLogPath;
 let heroesListCache;
 
@@ -61,29 +58,6 @@ settings.get('server_log_path').then(val => {
             updateServerLogStatus('Waiting for game to start...');
         }
     }
-});
-
-settings.get('steam_api_key').then(val => {
-    if (val !== undefined) {
-        steamApiKey = val;
-        steamUser = new SteamApi.User(val);
-        $('#steam-api-key').val(val);
-        getHeroesList();
-    }
-});
-
-// steam api key input
-$('#steam-api-key').change(function() {
-    let key = $(this).val();
-    settings.get('steam_api_key').then(val => {
-        if (val === undefined) {
-            steamApiKey = key;
-            steamUser = new SteamApi.User(key);
-        }
-        settings.set('steam_api_key', key);
-        Materialize.toast('Steam API key saved!', 5000, 'rounded');
-        getHeroesList();
-    });
 });
 
 // server_log.txt stuff
@@ -113,7 +87,7 @@ $('#reparse').click(function() {
 
 function cacheHeroesList(callback) {
     callback = callback || function() {};
-    request.get('http://api.steampowered.com/IEconDOTA2_570/GetHeroes/v1?key='+steamApiKey, (err, res, body) => {
+    request.get('https://api.opendota.com/api/heroes', (err, res, body) => {
         if (err) {
             console.log(err);
             return callback(null);
@@ -141,7 +115,7 @@ function getHeroesList() {
             cacheHeroesList();
         }
     } else {
-        return heroesListCache.response.result;
+        return heroesListCache.response;
     }
     return null;
 }
@@ -149,8 +123,8 @@ function getHeroesList() {
 function getHeroById(id) {
     let heroesList = getHeroesList();
     let res = null;
-    for (let i = 0; i < heroesList.heroes.length; i++) {
-        let hero = heroesList.heroes[i];
+    for (let i = 0; i < heroesList.length; i++) {
+        let hero = heroesList[i];
         if (hero.id != id) continue;
         res = hero;
         break;
@@ -184,13 +158,11 @@ function renderPlayer(i, steamId, steamIds) {
             });
             let res = yield playerSummariesResult;
             let player = res.profile;
-            if (player.steamid != steamId.getSteamID64()) return;
+            if (player === undefined || player.steamid != steamId.getSteamID64()) return;
             if (i > 4) {
                 renderMatchHistory(steamIds.length, i, steamId, player, false);
-                direIndex++;
             } else {
                 renderMatchHistory(steamIds.length, i, steamId, player, true);
-                radiantIndex++;
             }
         } catch (err) {
             console.log(err);
@@ -300,13 +272,13 @@ function getMatchDetails(matchId, callback) {
     if (matchDetails.hasOwnProperty(matchId)) {
         callback(matchDetails[matchId]);
     } else {
-        request.get('http://api.steampowered.com/IDOTA2Match_570/GetMatchDetails/v1?key='+steamApiKey+'&match_id='+matchId, (err, response, body) => {
+        request.get('https://api.opendota.com/api/matches/'+matchId, (err, response, body) => {
             if (err || response.statusCode != 200) return setTimeout(function() {
                 getMatchDetails(matchId, callback);
             }, 2000);
             let res = JSON.parse(body);
-            matchDetails[matchId] = res.result;
-            callback(res.result);
+            matchDetails[matchId] = res;
+            callback(res);
         });
     }
 }
